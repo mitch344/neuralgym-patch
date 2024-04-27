@@ -27,32 +27,36 @@ class NPZModelLoader(OnceCallback):
 
     """
 
-    def __init__(self, npz_file, weights=None,
-                 variable_scope=tf.get_variable_scope()):
+    def __init__(self, npz_file, weights=None, variable_scope=None):
         def convert_name(name):
             """convert tensorflow variable name to normal model name.
             we assume the name template of tensorflow is like:
-                - model/conv1/weights:0
-                - model/bn5c_branch2c/variance:0
+            - model/conv1/weights:0
+            - model/bn5c_branch2c/variance:0
             """
             name = name[:-2]
             ind = name.rfind('/', 0, name.rfind('/'))
             return name[ind+1:]
-
+        
         super().__init__(CallbackLoc.train_start)
         self._npz_file = npz_file
+        
         if self._npz_file[-4:] != '.npz':
-            assert ValueError('Not a valid .npz file.')
-        # get weights
+            raise ValueError('Not a valid .npz file.')
+        
         self._weights = weights
+        
         if self._weights is None:
             self._weights = {}
-            for tf_var in tf.global_variables():
-                # we assume name template is variable_scope/conv1/weights:0
-                if tf_var.name.startswith(variable_scope):
-                    name = convert_name(tf_var.name)
-                    self._weights[name] = tf_var
-        # load npz data
+        
+        if variable_scope is None:
+            variable_scope = tf.compat.v1.get_variable_scope().name
+        
+        for tf_var in tf.compat.v1.global_variables():
+            if tf_var.name.startswith(variable_scope):
+                name = convert_name(tf_var.name)
+                self._weights[name] = tf_var
+        
         self._npz_data = np.load(self._npz_file)
 
     def run(self, sess):
