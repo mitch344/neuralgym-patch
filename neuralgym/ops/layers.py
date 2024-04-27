@@ -90,7 +90,7 @@ def moving_average_var(x, decay=0.99, initial_value=0.,
 
 
 def depthwise_conv2d(x, ksize=3, stride=1, decay=0.0, biased=True, relu=False,
-         activation_fn=None, w_init=tf.contrib.layers.xavier_initializer_conv2d(),
+         activation_fn=None, w_init=tf.keras.initializers.GlorotUniform(),
          padding='SAME', name='depthwise_conv2d'):
     """Simple wrapper for convolution layer.
     Padding can be 'SAME', 'VALID', 'REFLECT', 'SYMMETRIC'
@@ -139,7 +139,7 @@ def avg_pool(x, ksize=2, stride=2, padding='SAME', name='avg_pool'):
 
 
 def resize(x, scale=2, to_shape=None, align_corners=True, dynamic=False,
-           func=tf.image.resize_bilinear, name='resize'):
+           func=tf.image.resize, name='resize'):
     if dynamic:
         xs = tf.cast(tf.shape(x), tf.float32)
         new_xs = [tf.cast(xs[1]*scale, tf.int32),
@@ -149,9 +149,9 @@ def resize(x, scale=2, to_shape=None, align_corners=True, dynamic=False,
         new_xs = [int(xs[1]*scale), int(xs[2]*scale)]
     with tf.variable_scope(name):
         if to_shape is None:
-            x = func(x, new_xs, align_corners=align_corners)
+            x = func(x, new_xs, method='bilinear', align_corners=align_corners)
         else:
-            x = func(x, [to_shape[0], to_shape[1]],
+            x = func(x, [to_shape[0], to_shape[1]], method='bilinear',
                      align_corners=align_corners)
     return x
 
